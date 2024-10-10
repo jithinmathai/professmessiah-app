@@ -37,4 +37,4 @@ build/
 ### Mac OS ###
 .DS_Store
 # Project exclude paths
-/frontend/dist/
+/frontend/dist/frontend/node/node
