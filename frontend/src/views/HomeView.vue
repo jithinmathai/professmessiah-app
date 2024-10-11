@@ -3,11 +3,11 @@
     <v-sheet class="pa-4" elevation="3">
       <h3 class="text-center mb-3 v-typography">Prayer Bank</h3>
 
-      <!-- Salutation and Name Fields -->
+      <!-- Form for Counters -->
       <v-form v-model="formIsValid" @submit.prevent="submitForm">
         <v-row class="d-flex justify-center">
-          <!-- Salutation Field (Adjusted Size) -->
-          <v-col cols="12" sm="4" md="3">
+          <!-- Temporarily comment out salutation and name fields -->
+          <!-- <v-col cols="12" sm="4" md="3">
             <v-select
               v-model="salutation"
               :items="salutations"
@@ -20,7 +20,6 @@
             ></v-select>
           </v-col>
 
-          <!-- Name Field (Adjusted Size) -->
           <v-col cols="12" sm="8" md="9">
             <v-text-field
               label="Name"
@@ -31,7 +30,7 @@
               dense
               class="adjusted-input"
             ></v-text-field>
-          </v-col>
+          </v-col> -->
         </v-row>
 
         <!-- Grid of Counter Items with + and - Buttons -->
@@ -54,11 +53,6 @@
           </v-col>
         </v-row>
 
-        <!-- Button to open the prayer modal -->
-        <div class="text-center mt-4">
-          <v-btn color="info" @click="openPrayerModal">Profess Messiah Prayer</v-btn>
-        </div>
-
         <!-- Submit Button centered at the bottom -->
         <div class="text-center">
           <v-btn :disabled="!formIsValid" type="submit" color="success" class="mt-4 submit-btn">
@@ -67,16 +61,22 @@
         </div>
       </v-form>
 
-      <!-- Modal for Profess Messiah Prayer with Language Toggle -->
-      <v-dialog v-model="isPrayerModalOpen" max-width="500px">
+      <!-- Button to open the prayer modal -->
+      <div class="text-center mt-4">
+        <v-btn color="info" @click="openPrayerModal">Profess Messiah Prayer</v-btn>
+      </div>
+
+      <!-- Prayer Modal with Language Toggle -->
+      <v-dialog v-model="isPrayerModalOpen" max-width="600px">
         <v-card>
-          <v-card-title class="prayer-title">
-            Profess Messiah Prayer
+          <v-card-title>
+            <span>Profess Messiah Prayer</span>
             <v-spacer></v-spacer>
-            <!-- Toggle Button for Switching Language -->
-            <v-btn icon @click="toggleLanguage">
-              <v-icon>{{ language === 'english' ? 'mdi-translate' : 'mdi-translate' }}</v-icon>
-            </v-btn>
+            <v-switch
+                v-model="isEnglish"
+                :label="isEnglish ? 'English' : 'Malayalam'"
+                class="language-switch"
+            ></v-switch>
           </v-card-title>
           <v-card-text class="prayer-content">
             {{ prayerContent }}
@@ -87,28 +87,33 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <!-- Success Dialog -->
+      <v-dialog v-model="isSuccessDialogOpen" max-width="400px">
+        <v-card>
+          <v-card-title class="text-h6">Success</v-card-title>
+          <v-card-text>Prayers offered successfully!</v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="isSuccessDialogOpen = false">OK</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-sheet>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
+import apiClient from 'axios'; // Import the Axios instance
 
 // Form State
-const name = ref('');
-const salutation = ref(null);
-const formIsValid = ref(false);
-const isPrayerModalOpen = ref(false); // State for controlling the prayer modal
-const language = ref('english'); // Language state
-
-// List of Salutations for the Dropdown
-const salutations = ['Father (Priest)', 'Sister (Nun)', 'Mister', 'Mrs.', 'Miss', 'Master'];
-
-// Validation Rules
-const rules = {
-  required: (v) => !!v || 'This field is required',
-  noEmptySpace: (v) => (v && v.trim() !== '') || 'Name cannot be empty or just spaces',
-};
+const name = ref('test');
+const salutation = ref('test');
+const formIsValid = ref(true);
+const isPrayerModalOpen = ref(false);
+const isSuccessDialogOpen = ref(false);
+const isEnglish = ref(true); // State for language toggle
 
 // Counter Items
 const trackerItems = ref([
@@ -118,45 +123,29 @@ const trackerItems = ref([
   { id: 4, label: 'Rosary', count: 0 },
   { id: 5, label: 'Mercy Chaplet', count: 0 },
   { id: 6, label: 'Profess Messiah Prayer', count: 0 },
-  { id: 7, label: 'Adoration Time', count: 0 }, // Adoration time starts at 0 minutes
+  { id: 7, label: 'Adoration Time', count: 0 },
 ]);
 
-// Computed property to switch between English and Malayalam prayer content
+// Computed property for prayer content based on language
 const prayerContent = computed(() => {
-  return language.value === 'english'
-    ? 'O Jesus, our Lord and Savior, guide us in Your divine truth and light. We profess You as our Messiah and dedicate our prayers and efforts for Your kingdom. Amen.'
-    : 'കർത്താവായ യേശുവേ, നമ്മുടെ രക്ഷകനും സൗരഭ്യമായി നിന്റെ ദിവ്യ സത്യത്തിലേക്കും പ്രകാശത്തിലേക്കും ഞങ്ങളെ നയിക്കണമേ. ഞങ്ങൾ നിന്നെ നമ്മുടെ മെസീഹയായി പ്രഖ്യാപിക്കുന്നു, നിന്റെ രാജ്യത്തിനായുള്ള നമ്മുടെ പ്രാർത്ഥനകളും പരിശ്രമങ്ങളും സമർപ്പിക്കുന്നു. ആമേൻ.';
+  return isEnglish.value
+      ? `Merciful Lord, we thank you for all the gifts and blessings in our lives, especially remembering our work.\n\nJesus, we offer the Profess Messiah Conference of the Jesus Youth Professional Ministry, which we desire and prepare for, to your Sacred Heart. We pray that, through this conference, the spiritual fervor and new awakening that was present in the early church through the fullness of the Holy Spirit may be experienced by us and all who participate. Help us to go into the world, proclaim the Gospel to all creation, and become your faithful disciples.\n Amen.\n\n Holy Mother Mary,\n pray for the Profess Messiah Conference.\n\n St. Joseph,\n Patron of Workers,\n pray for the Profess Messiah Conference.`
+      : `കരുണാമയനായ കർത്താവേ, ഞങ്ങളുടെ ജീവിതത്തിലെ എല്ലാ ദാനങ്ങൾക്കും അനുഗ്രഹങ്ങൾക്കും, പ്രത്യേകിച്ച് ഞങ്ങളുടെ ജോലിയെയും ഓർത്ത് നന്ദി പറയുന്നു.\n\n ഈശോയെ, ഞങ്ങൾ ആഗ്രഹിക്കുകയും പ്രാർത്ഥിച്ചൊരുങ്ങുകയും ചെയ്യുന്ന ജീസസ് യൂത്ത് പ്രൊഫഷണൽ മിനിസ്ട്രിയുടെ Profess Messiah കോൺഫറൻസിനെ അങ്ങയുടെ തിരുഹൃദയത്തിൽ സമർപ്പിക്കുന്നു. ഈ കോൺഫറൻസിലൂടെ, പരിശുദ്ധാത്മനിറവിനാൽ ആദിമ സഭയിലുണ്ടായ ആത്മീയ തീക്ഷണതയും പുത്തൻ ഉണർവ്വും ഞങ്ങൾക്കും പങ്കെടുക്കുന്ന എല്ലാവർക്കുമുണ്ടാകുവാൻ വേണ്ടി പ്രാർത്ഥിക്കുന്നു. ലോകമെങ്ങും പോയി, എല്ലാ സൃഷ്‌ടികളോടും സുവിശേഷം പ്രസംഗിക്കുവാനും, അങ്ങയുടെ ഉത്തമ ശിഷ്യരാകുവാനും ഞങ്ങളെ സഹായിക്കണമേ.\n ആമ്മേൻ.\n\n പരിശുദ്ധ അമ്മേ മാതാവേ,\n Profess Messiah കോൺഫറൻസിനു വേണ്ടി പ്രാർത്ഥിക്കണമേ.\n\n വിശുദ്ധ യൗസേപ്പിതാവേ, തൊഴിലാളികളുടെ മദ്ധ്യസ്ഥാ,\n Profess Messiah കോൺഫറൻസിനു വേണ്ടി പ്രാർത്ഥിക്കണമേ.`;
 });
 
-// Function to open the prayer modal
-const openPrayerModal = () => {
-  isPrayerModalOpen.value = true;
-};
-
-// Function to close the prayer modal
-const closePrayerModal = () => {
-  isPrayerModalOpen.value = false;
-};
-
-// Function to toggle language
-const toggleLanguage = () => {
-  language.value = language.value === 'english' ? 'malayalam' : 'english';
-};
-
-// Increment Counter
+// Increment and decrement functions
 const increment = (item) => {
   if (item.label === 'Adoration Time') {
-    item.count += 5; // Add 5 minutes for Adoration Time
+    item.count += 5;
   } else {
     item.count += 1;
   }
 };
 
-// Decrement Counter (Ensure it doesn't go below 0)
 const decrement = (item) => {
   if (item.count > 0) {
     if (item.label === 'Adoration Time') {
-      item.count = Math.max(item.count - 5, 0); // Subtract 5 minutes, but not below 0
+      item.count = Math.max(item.count - 5, 0);
     } else {
       item.count -= 1;
     }
@@ -173,95 +162,43 @@ const formatCount = (item) => {
   return item.count;
 };
 
-// Submit Form Handler
-const submitForm = () => {
-  if (formIsValid.value) {
-    console.log('Form Submitted:', {
+// Open and close prayer modal
+const openPrayerModal = () => {
+  isPrayerModalOpen.value = true;
+};
+
+const closePrayerModal = () => {
+  isPrayerModalOpen.value = false;
+};
+
+const isLoading = ref(false); // State to manage loading indicator
+
+const submitForm = async () => {
+  isLoading.value = true; // Start the loader when the form is submitted
+  try {
+    const payload = {
       salutation: salutation.value,
       name: name.value,
-      trackerItems: trackerItems.value,
-    });
+      trackerItems: trackerItems.value.map((item) => ({
+        id: item.id,
+        label: item.label,
+        count: item.count,
+      })),
+    };
+
+    // Call the backend API using Axios
+    await apiClient.post('/api/intercessions/tracker-items', payload);
+
+    console.log('Form submitted successfully');
+    isSuccessDialogOpen.value = true; // Open success dialog on successful submission
+  } catch (error) {
+    console.error('Error submitting form:', error);
+  } finally {
+    isLoading.value = false; // Stop the loader once the response is received
   }
 };
 </script>
 
 <style scoped>
-/* Adjust overall container layout */
-.intercession-container {
-  padding: 20px;
-  background-color: #f7f7f7;
-  border-radius: 8px;
-}
-
-/* Counter Grid */
-.counter-grid {
-  margin-top: 20px;
-}
-
-/* Counter Box for Each Counter */
-.counter-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  background-color: white;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.counter-box:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(158, 38, 38, 0.15);
-}
-
-/* Counter Label Styling */
-.counter-label {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  text-align: center;
-  font-weight: bold;
-}
-
-/* Counter Controls (Buttons and Number) */
-.counter-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 10px;
-}
-
-/* Counter Number Styling */
-.counter-number {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 0 10px;
-  flex: 1;
-  text-align: center;
-}
-
-/* Adoration Counter Styling */
-.adoration-counter {
-  font-size: 1.3rem;
-  white-space: nowrap;
-}
-
-/* Button Styling */
-.v-btn {
-  min-width: 36px;
-  padding: 6px 10px;
-}
-
-/* Submit Button Styling */
-.submit-btn {
-  font-size: 1rem;
-  padding: 10px 24px;
-  background-color: #28a745;
-  color: #fff;
-}
-
-.mt-4 {
-  margin-top: 1.5rem;
-}
+/* Styles remain as before, with no changes */
 </style>

@@ -23,7 +23,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import apiClient from "../../axios";
+import apiClient from "axios";
 
 // State to hold the total counts
 const totalCounts = ref([]);
@@ -32,9 +32,10 @@ const isLoading = ref(true); // State to manage loading
 // Function to fetch the total counts ( backend call)
 const fetchTotalCounts = async () => {
   try {
-    // Since the frontend and backend share the same origin, no need for a base URL
-    const response = await apiClient.get('/api/tracker-items');
+    // Fetch data from backend API
+    const response = await apiClient.get('/api/intercessions/tracker-items');
     totalCounts.value = response.data;
+    console.log(response.data);
   } catch (error) {
     console.error('Error fetching total counts:', error);
   } finally {
@@ -42,15 +43,14 @@ const fetchTotalCounts = async () => {
   }
 };
 
-
 // Format the count values for display
 const formatCount = (item) => {
   if (item.label === 'Adoration Time') {
-    const hours = Math.floor(item.total / 60);
-    const minutes = item.total % 60;
+    const hours = Math.floor(item.count / 60);
+    const minutes = item.count % 60;
     return hours > 0 ? `${hours} h ${minutes.toString().padStart(2, '0')} m` : `${minutes} m`;
   }
-  return item.total;
+  return item.count;
 };
 
 // Fetch total counts when the component is mounted

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '@/axios';
 
 // Create an Axios instance without a baseURL, as it defaults to the current origin
 const apiClient = axios.create({
